@@ -1,4 +1,4 @@
-# Control de Proceso por Temperatura
+# Control de Pasteurización Automatizado con Arduino Leonardo
 
 ![Arduino](https://img.shields.io/badge/Arduino-UNO%2FNano-blue) ![Sensor](https://img.shields.io/badge/Sensor-DS18B20-green) ![RTC](https://img.shields.io/badge/RTC-DS3231-blue) ![LCD](https://img.shields.io/badge/Display-LCD%2016×2-orange)
 
