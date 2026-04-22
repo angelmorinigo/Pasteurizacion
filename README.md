@@ -116,3 +116,7 @@ TERMINADO
 - El nombre de los estados (`Calentando`, `Enfriando`, etc.) se usa también en la salida serial. No modificar las cadenas dentro de la función `nombreEstado()` si se integra con otro sistema que las parsea.
 - La detección del estado del relé en el LCD se hace leyendo directamente el pin digital, por lo que refleja el estado real del hardware independientemente de cómo se llame la función de activación.
 - Para instalar las librerias se debe pulsar Ctrl+Shift+i para  y buscar las librerias correspondientes.
+
+## 🌐 Contacto
+
+- LinkedIn: [https://www.linkedin.com/in/angel-morinigo/](https://www.linkedin.com/in/angel-morinigo/)
