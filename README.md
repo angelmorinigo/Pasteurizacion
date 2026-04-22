@@ -1,108 +1,117 @@
-# Sistema de Pasteurización Automatizado con Arduino Leonardo
+# Control de Proceso por Temperatura
 
-Este proyecto implementa un sistema automatizado de pasteurización utilizando un Arduino Leonardo, sensor de temperatura DS18B20, módulo RTC DS3231 y un display LCD 1602A.
+![Arduino](https://img.shields.io/badge/Arduino-UNO%2FNano-blue) ![Sensor](https://img.shields.io/badge/Sensor-DS18B20-green) ![RTC](https://img.shields.io/badge/RTC-DS3231-blue) ![LCD](https://img.shields.io/badge/Display-LCD%2016×2-orange)
 
-El sistema controla tres etapas principales mediante relés:
+Firmware para Arduino que automatiza un proceso industrial de 3 fases (calentamiento, enfriamiento y fase final) controlando relés según temperatura y tiempo. Muestra el estado en pantalla LCD y por puerto serial. Los tiempos y umbrales de temperatura son configurables al inicio del archivo.
 
- Calentamiento
- Enfriamiento / Pasteurización
- Fase Final
- Funcionamiento General
+---
 
-El proceso se ejecuta de forma completamente automática en tres etapas secuenciales, con tiempos configurables desde el código.
+## Hardware requerido
 
- Etapa 1: Calentamiento
-Se activa el pin 4 (resistencia)
-Se mantiene pin 5 apagado
-Duración configurable (ej: 30 minutos)
+| Componente | Descripción | Pin(es) |
+|---|---|---|
+| DS18B20 | Sensor de temperatura 1-Wire | D7 |
+| DS3231 | Módulo RTC I2C | SDA / SCL |
+| LCD 16×2 | Pantalla paralelo 4 bits (sin I2C) | D8 – D13 |
+| Relé etapa 1 | Calentamiento | D4 |
+| Relé etapa 2 | Enfriamiento | D5 |
+| Relé etapa 3 | Fase final | D6 |
 
- En pantalla:
+---
 
-Calentando
-Restan: XX min
+## Librerías necesarias
 
- Estado:
+Instalar desde el Gestor de Librerías del IDE de Arduino (`Ctrl+Shift+I`), última versión disponible:
 
-El sistema mide temperatura en tiempo real
-No afecta la lógica (solo informativo en esta etapa)
-❄️ Etapa 2: Enfriamiento / Pasteurización
-Se apaga pin 4
-Se activa pin 5
-Duración configurable (ej: 30 minutos)
-No depende de la temperatura
+- `OneWire`
+- `DallasTemperature`
+- `RTClib`
+- `LiquidCrystal` (incluida en el IDE)
 
- En pantalla:
+---
 
-Enfriando
-Restan: XX min
+## Parámetros configurables
 
- Estado:
+Al inicio del archivo se encuentran todas las variables que se pueden ajustar sin modificar la lógica del programa:
 
-El sistema sigue mostrando la temperatura
-El tiempo continúa aunque la temperatura cambie
- Etapa 3: Fase Final
-Se apagan pin 4 y pin 5
-Se activa pin 6
-Duración configurable (ej: 1 minuto)
+```cpp
+// Tiempos de cada etapa (en minutos)
+unsigned long TIEMPO_CALENTAMIENTO_MIN = 1;
+unsigned long TIEMPO_ENFRIAMIENTO_MIN  = 1;
+unsigned long TIEMPO_FINAL_MIN         = 1;
 
- En pantalla:
+// Umbrales de temperatura
+float TEMP_MINIMA = 28.0;  // °C
+float TEMP_MAXIMA = 29.5;  // °C
 
-Fase final
-Restan: X min
- Etapa 4: Finalización
-Todos los pines se apagan
-El proceso termina
+// Polaridad del relé
+// true  → se activa con LOW  (0 V)
+// false → se activa con HIGH (+5 V)
+bool RELE_ACTIVO_EN_LOW = false;
+```
 
- En pantalla:
+---
 
-Proceso
-terminado
-⏱️ Configuración de Tiempos
+## Etapas del proceso
 
-Los tiempos se configuran directamente en el código:
+### Etapa 0 — Calentamiento inicial
+El relé en D4 se activa desde el arranque hasta que la temperatura supera `TEMP_MAXIMA`. No hay límite de tiempo en esta etapa.
 
-unsigned long TIEMPO_CALENTAMIENTO_MIN = 30;
-unsigned long TIEMPO_ENFRIAMIENTO_MIN = 30;
-unsigned long TIEMPO_FINAL_MIN = 1;
+### Etapa 1 — Calentando (control termostático)
+Una vez alcanzada la temperatura máxima, el sistema mantiene la temperatura entre `TEMP_MINIMA` y `TEMP_MAXIMA` durante `TIEMPO_CALENTAMIENTO_MIN` minutos. El relé D4 se conmuta automáticamente según la temperatura medida.
 
-Ejemplo:
+### Etapa 2 — Enfriamiento
+El relé D5 permanece activo durante `TIEMPO_ENFRIAMIENTO_MIN` minutos. Los relés D4 y D6 se mantienen apagados.
 
-unsigned long TIEMPO_CALENTAMIENTO_MIN = 35;
-🌡️ Sensor de Temperatura
+### Etapa 3 — Fase final
+El relé D6 permanece activo durante `TIEMPO_FINAL_MIN` minutos. Al finalizar, todos los relés se apagan y el sistema queda en estado `TERMINADO`.
 
-Se utiliza un sensor DS18B20:
+---
 
-Lectura en tiempo real
-Mostrado en LCD y Monitor Serial
-No afecta la lógica de tiempos (modo automático por tiempo)
-🖥️ Interfaz LCD
+## Primera puesta en marcha — ajuste del RTC
 
-Display 1602A sin I2C, mostrando:
+Para sincronizar el módulo DS3231 con la hora del sistema al momento de compilar, descomentar la siguiente línea en `setup()`, cargar el sketch y luego volver a comentarla antes de la siguiente carga:
 
-Estado del sistema
-Tiempo restante por etapa
-Temperatura actual
-Estado de relés
-🔌 Asignación de Pines
-Función	Pin Arduino
-DS18B20 DATA	7
-Relay Calentador	4
-Relay Enfriador	5
-Relay Final	6
-LCD RS	8
-LCD E	9
-LCD D4–D7	10–13
-RTC SDA	SDA
-RTC SCL	SCL
- Consideraciones Importantes
-Compatible con relés activos en LOW o HIGH:
-bool RELE_ACTIVO_EN_LOW = true;
-Ajustar hora del RTC solo una vez:
+```cpp
 // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-El sistema funciona por tiempo, no por temperatura (modo industrial simple)
+```
 
- Descripción Técnica
-Arquitectura basada en máquina de estados
-Control de tiempos mediante millis()
-No bloqueante
-Compatible con múltiples sensores
+> **Importante:** si esta línea queda activa, el reloj se reiniciará al momento de compilación cada vez que se encienda el Arduino.
+
+---
+
+## Monitor serial
+
+Velocidad: **9600 baud**. Cada 500 ms se imprime un bloque con el estado actual:
+
+```
+Hora: 14:32:07
+Temp: 28.9 C
+Estado: Calentando
+Restan: 28 min
+------------------------
+```
+
+Los campos `Restan` solo aparecen durante las etapas 1, 2 y 3 (no en calentamiento inicial ni en terminado).
+
+---
+
+## LCD — alternancia de pantalla
+
+Durante las etapas activas, la pantalla alterna cada 2 segundos entre dos vistas:
+
+- **Vista A:** tiempo restante de la fase actual.
+- **Vista B:** temperatura actual y estado del relé correspondiente.
+
+En estado `TERMINADO` muestra de forma fija:
+```
+Proceso
+TERMINADO
+```
+
+---
+
+## Notas
+
+- El nombre de los estados (`Calentando`, `Enfriando`, etc.) se usa también en la salida serial. No modificar las cadenas dentro de la función `nombreEstado()` si se integra con otro sistema que las parsea.
+- La detección del estado del relé en el LCD se hace leyendo directamente el pin digital, por lo que refleja el estado real del hardware independientemente de cómo se llame la función de activación.
