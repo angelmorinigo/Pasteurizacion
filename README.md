@@ -36,8 +36,8 @@ Al inicio del archivo se encuentran todas las variables que se pueden ajustar si
 
 ```cpp
 // Tiempos de cada etapa (en minutos)
-unsigned long TIEMPO_CALENTAMIENTO_MIN = 1;
-unsigned long TIEMPO_ENFRIAMIENTO_MIN  = 1;
+unsigned long TIEMPO_CALENTAMIENTO_MIN = 30;
+unsigned long TIEMPO_ENFRIAMIENTO_MIN  = 30;
 unsigned long TIEMPO_FINAL_MIN         = 1;
 
 // Umbrales de temperatura
